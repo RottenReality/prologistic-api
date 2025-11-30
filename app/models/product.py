@@ -7,5 +7,5 @@ class Product(Base):
 
     id = Column(Integer, primary_key=True, index= True)
     name = Column(String(100), nullable=False)
-    email = Column(String(255))
+    description = Column(String(255))
     created_at = Column(DateTime, default=datetime.utcnow)
