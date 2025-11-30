@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.models.port import Port
 from app.core.database import get_db
 from app.security.auth import check_token
 from app.crud import port as crud
@@ -8,8 +9,22 @@ from app.schemas.port import PortCreate, PortUpdate, PortResponse
 router = APIRouter(dependencies=[Depends(check_token)])
 
 @router.get("/", response_model=list[PortResponse])
-def list_ports(db: Session = Depends(get_db)):
-    return crud.list(db)
+def list_ports(
+    name: str | None = None,
+    location: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Port)
+
+    if name is not None:
+        query = query.filter(Port.name.ilike(f"%{name}%"))
+
+    if location is not None:
+        query = query.filter(Port.location.ilike(f"%{location}%"))
+        
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/{port_id}", response_model=PortResponse)
 def get_port(port_id: int, db: Session = Depends(get_db)):

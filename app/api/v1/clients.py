@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-
+from app.models.client import Client
 from app.core.database import get_db
 from app.security.auth import check_token
 from app.crud import client as crud
@@ -9,8 +9,18 @@ from app.schemas.client import ClientCreate, ClientUpdate, ClientResponse
 router = APIRouter(dependencies=[Depends(check_token)])
 
 @router.get("/", response_model=list[ClientResponse])
-def list_clients(db: Session = Depends(get_db)):
-    return crud.list(db)
+def list_clients(
+    name: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Client)
+
+    if name is not None:
+        query = query.filter(Client.name.ilike(f"%{name}%"))
+    
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/{client_id}", response_model=ClientResponse)
 def get_client(client_id: int, db: Session = Depends(get_db)):
