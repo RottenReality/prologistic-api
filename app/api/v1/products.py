@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.models.product import Product
 from app.core.database import get_db
 from app.security.auth import check_token
 from app.crud import product as crud
@@ -8,8 +9,18 @@ from app.schemas.product import ProductCreate, ProductUpdate, ProductResponse
 router = APIRouter(dependencies=[Depends(check_token)])
 
 @router.get("/", response_model=list[ProductResponse])
-def list_products(db: Session = Depends(get_db)):
-    return crud.list(db)
+def list_products(
+    name: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Product)
+
+    if name:
+        query = query.filter(Product.name.ilike(f"%{name}%"))
+    
+    return query.offset(skip).limit(limit).all()
 
 @router.get("/{product_id}", response_model=ProductResponse)
 def get_product(product_id: int, db: Session = Depends(get_db)):

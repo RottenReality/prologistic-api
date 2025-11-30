@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from app.models.warehouse import Warehouse
 from app.core.database import get_db
 from app.security.auth import check_token
 from app.crud import warehouse as crud
@@ -8,8 +9,23 @@ from app.schemas.warehouse import WarehouseCreate, WarehouseUpdate, WarehouseRes
 router = APIRouter(dependencies=[Depends(check_token)])
 
 @router.get("/", response_model=list[WarehouseResponse])
-def list_warehouses(db: Session = Depends(get_db)):
-    return crud.list(db)
+def list_warehouses(
+    name: str | None = None,
+    location: str | None = None,
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db)
+):
+    query = db.query(Warehouse)
+
+    if name is not None:
+        query = query.filter(Warehouse.name.ilike(f"%{name}%"))
+
+    if location is not None:
+        query = query.filter(Warehouse.location.ilike(f"%{location}%"))
+        
+    return query.offset(skip).limit(limit).all()
+    
 
 @router.get("/{warehouse_id}", response_model=WarehouseResponse)
 def get_warehouse(warehouse_id: int, db: Session = Depends(get_db)):
