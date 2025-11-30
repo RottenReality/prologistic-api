@@ -9,6 +9,8 @@ class Settings(BaseSettings):
     DB_HOST: str
     DB_PORT: int
     DB_NAME: str
+    
+    AUTH_TOKEN: str
 
     @property
     def DATABASE_URL(self) -> str:
